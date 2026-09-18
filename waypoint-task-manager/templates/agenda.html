@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Agenda · Waypoint{% endblock %}
+{% block body_class %}app-shell{% endblock %}
+{% block content %}
+  {% include "_sidebar.html" %}
+  <div class="workspace">
+    <header class="app-bar">
+      <h1>Agenda</h1>
+    </header>
+    <main class="dash">
+      <p class="lede">Due dates from three days ago through the next two weeks.</p>
+      <div class="agenda">
+        {% for day, tasks in days.items() %}
+          <section class="agenda-day {{ 'today' if day == today else '' }}">
+            <h2>{{ day.strftime('%a, %b %d') }}{% if day == today %} <em>Today</em>{% endif %}</h2>
+            {% if tasks %}
+              <ul class="task-list compact">
+                {% for task in tasks %}
+                  <li>
+                    <a href="{{ url_for('main.task_detail', task_id=task.id) }}">
+                      <span class="prio {{ task.priority }}">{{ task.priority }}</span>
+                      <strong>{{ task.title }}</strong>
+                      <span class="muted">{{ task.project.name }} · {{ status_labels.get(task.status, task.status) }}</span>
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="empty">Clear.</p>
+            {% endif %}
+          </section>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+{% endblock %}

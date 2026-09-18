@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · Waypoint{% endblock %}
+{% block body_class %}app-shell board-page{% endblock %}
+{% block content %}
+  {% include "_sidebar.html" %}
+  <div class="workspace">
+    <header class="app-bar">
+      <div class="bar-title">
+        <span class="swatch lg" style="background:{{ project.color }}"></span>
+        <div>
+          <p class="eyebrow">{{ project.state }} · {{ project.progress() }}% shipped</p>
+          <h1>{{ project.name }}</h1>
+        </div>
+      </div>
+      <div class="bar-end">
+        <a class="btn" href="{{ url_for('main.task_new', project_id=project.id) }}">Add task</a>
+        {% if project.owner_id == current_user.id %}
+          <a class="ghost" href="{{ url_for('main.project_edit', project_id=project.id) }}">Edit</a>
+        {% endif %}
+      </div>
+    </header>
+    <main class="board-wrap">
+      <p class="lede">{{ project.description or 'Add a brief so the team knows the destination.' }}</p>
+      <form class="filters" method="get">
+        <input type="search" name="q" value="{{ query }}" placeholder="Filter tasks" />
+        <select name="priority">
+          <option value="all">All priorities</option>
+          {% for item in priorities %}
+            <option value="{{ item }}" {% if priority == item %}selected{% endif %}>{{ item|capitalize }}</option>
+          {% endfor %}
+        </select>
+        <select name="assignee">
+          <option value="all">Everyone</option>
+          <option value="me" {% if assignee == 'me' %}selected{% endif %}>Assigned to me</option>
+          {% for person in people %}
+            <option value="{{ person.id }}" {% if assignee == person.id|string %}selected{% endif %}>{{ person.name }}</option>
+          {% endfor %}
+        </select>
+        <select name="view" onchange="this.form.submit()">
+          <option value="board" {% if view == 'board' %}selected{% endif %}>Board</option>
+          <option value="list" {% if view == 'list' %}selected{% endif %}>List</option>
+        </select>
+        <button class="btn" type="submit">Apply</button>
+      </form>
+      <div class="board-grid">
+        {% if view == 'list' %}
+          <section>
+            {% if not tasks %}
+              <p class="empty">No tasks match these filters.</p>
+            {% else %}
+              <ul class="task-list">
+                {% for task in tasks %}
+                  <li>
+                    <a href="{{ url_for('main.task_detail', task_id=task.id) }}">
+                      <span class="prio {{ task.priority }}">{{ task.priority }}</span>
+                      <strong>{{ task.title }}</strong>
+                      <span class="muted">{{ status_labels[task.status] }}{% if task.assignee %} · {{ task.assignee.name }}{% endif %}</span>
+                      {% if task.due_date %}
+                        <time class="{{ 'overdue' if task.overdue else '' }}">{{ task.due_date.strftime('%b %d') }}</time>
+                      {% endif %}
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </section>
+        {% else %}
+          <section class="kanban" data-board>
+            {% for status in statuses %}
+              <div class="column" data-status="{{ status }}">
+                <h2>{{ status_labels[status] }} <span>{{ columns[status]|length }}</span></h2>
+                <ul data-drop>
+                  {% for task in columns[status] %}
+                    <li class="task-card" draggable="true" data-task-id="{{ task.id }}">
+                      <a href="{{ url_for('main.task_detail', task_id=task.id) }}">
+                        <span class="prio {{ task.priority }}">{{ task.priority }}</span>
+                        <strong>{{ task.title }}</strong>
+                        <div class="chips">
+                          {% for label in task.labels %}
+                            <em class="chip" style="--chip:{{ label.color }}">{{ label.name }}</em>
+                          {% endfor %}
+                        </div>
+                        {% set done, total = task.checklist_progress %}
+                        {% if total %}
+                          <span class="muted">{{ done }}/{{ total }} checklist</span>
+                        {% endif %}
+                        {% if task.assignee %}<span>{{ task.assignee.name }}</span>{% endif %}
+                        {% if task.due_date %}
+                          <time class="{{ 'overdue' if task.overdue else '' }}" datetime="{{ task.due_date.isoformat() }}">{{ task.due_date.strftime('%b %d') }}</time>
+                        {% endif %}
+                      </a>
+                    </li>
+                  {% endfor %}
+                </ul>
+                <form method="post" action="{{ url_for('main.task_quick', project_id=project.id) }}" class="quick">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input type="hidden" name="status" value="{{ status }}" />
+                  <input type="hidden" name="view" value="board" />
+                  <input type="text" name="title" maxlength="180" placeholder="Quick add…" />
+                </form>
+              </div>
+            {% endfor %}
+          </section>
+        {% endif %}
+        <aside class="rail">
+          <h2>Crew</h2>
+          <ul class="people-list">
+            <li>{{ project.owner.name }} <em>owner</em></li>
+            {% for membership in project.members %}
+              <li>
+                {{ membership.user.name }}
+                {% if project.owner_id == current_user.id %}
+                  <form method="post" action="{{ url_for('main.remove_member', project_id=project.id, user_id=membership.user_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="linkish">Remove</button>
+                  </form>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+          {% if project.owner_id == current_user.id %}
+            <form method="post" action="{{ url_for('main.add_member', project_id=project.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="email" name="email" required placeholder="Invite by email" />
+              <button class="btn" type="submit">Add</button>
+            </form>
+          {% endif %}
+          <h2>Labels</h2>
+          <div class="chips wrap">
+            {% for label in project.labels %}
+              <em class="chip" style="--chip:{{ label.color }}">{{ label.name }}</em>
+            {% endfor %}
+          </div>
+          <form method="post" action="{{ url_for('main.add_label', project_id=project.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="text" name="name" required maxlength="40" placeholder="New label" />
+            <input type="color" name="color" value="#7dd3c0" />
+            <button class="btn" type="submit">Add</button>
+          </form>
+          <h2>Activity</h2>
+          {% if activities %}
+            <ul class="plain">
+              {% for item in activities %}
+                <li>
+                  <strong>{{ item.actor.name }}</strong>
+                  <span>{{ item.message }}</span>
+                  <small>{{ item.created_at.strftime('%b %d, %H:%M') }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty">No activity yet.</p>
+          {% endif %}
+        </aside>
+      </div>
+    </main>
+  </div>
+{% endblock %}

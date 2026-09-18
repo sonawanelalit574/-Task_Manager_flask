@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Settings · Waypoint{% endblock %}
+{% block body_class %}app-shell{% endblock %}
+{% block content %}
+  {% include "_sidebar.html" %}
+  <div class="workspace">
+    <header class="app-bar">
+      <h1>Settings</h1>
+    </header>
+    <main class="narrow">
+      <form method="post" class="panel">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <label>Display name
+          <input type="text" name="name" required maxlength="80" value="{{ current_user.name }}" />
+        </label>
+        <label>Theme
+          <select name="theme">
+            <option value="dark" {% if current_user.theme == 'dark' %}selected{% endif %}>Dark</option>
+            <option value="light" {% if current_user.theme == 'light' %}selected{% endif %}>Light</option>
+          </select>
+        </label>
+        <label>New password <span class="muted">(leave blank to keep current)</span>
+          <input type="password" name="password" minlength="8" autocomplete="new-password" />
+        </label>
+        <p class="muted">Signed in as {{ current_user.email }}</p>
+        <button class="btn large" type="submit">Save settings</button>
+      </form>
+    </main>
+  </div>
+{% endblock %}

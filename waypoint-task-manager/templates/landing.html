@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Waypoint — ship the work{% endblock %}
+{% block body_class %}landing{% endblock %}
+{% block content %}
+  <header class="top">
+    <a class="mark" href="{{ url_for('main.landing') }}">Waypoint</a>
+    <nav>
+      <a href="{{ url_for('auth.login') }}">Sign in</a>
+      <a class="btn" href="{{ url_for('auth.register') }}">Start free</a>
+    </nav>
+  </header>
+  <main class="hero">
+    <p class="eyebrow">Python · Flask · production ready</p>
+    <h1>A task manager that looks as sharp as the work you ship.</h1>
+    <p class="lede">Boards, inbox, agenda, labels, checklists, and notes — one workspace for projects that need to move.</p>
+    <div class="hero-actions">
+      <a class="btn large" href="{{ url_for('auth.register') }}">Create your workspace</a>
+      <a class="ghost" href="{{ url_for('auth.login') }}">I already have an account</a>
+    </div>
+    <section class="feature-row" aria-label="Product features">
+      <article>
+        <h3>Kanban + list</h3>
+        <p>Drag cards across columns or scan every task in a compact list.</p>
+      </article>
+      <article>
+        <h3>My work & agenda</h3>
+        <p>See what is assigned to you and what is due over the next two weeks.</p>
+      </article>
+      <article>
+        <h3>Labels & checklists</h3>
+        <p>Tag work, break it down, comment, and invite the crew by email.</p>
+      </article>
+    </section>
+    <section class="preview" aria-label="Board preview">
+      <article class="preview-card">
+        <span class="dot"></span>
+        <h3>Website relaunch</h3>
+        <p>4 of 9 tasks shipped</p>
+        <div class="bar"><i style="width:44%"></i></div>
+      </article>
+      <article class="preview-card late">
+        <span class="dot"></span>
+        <h3>Invoice API</h3>
+        <p>Due today · review</p>
+        <div class="bar"><i style="width:72%"></i></div>
+      </article>
+      <article class="preview-card">
+        <span class="dot"></span>
+        <h3>Onboarding kit</h3>
+        <p>Paused until Friday</p>
+        <div class="bar"><i style="width:18%"></i></div>
+      </article>
+    </section>
+  </main>
+{% endblock %}

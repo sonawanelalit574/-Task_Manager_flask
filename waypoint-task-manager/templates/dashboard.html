@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Boards · Waypoint{% endblock %}
+{% block body_class %}app-shell{% endblock %}
+{% block content %}
+  {% include "_sidebar.html" %}
+  <div class="workspace">
+    <header class="app-bar">
+      <form class="search" method="get">
+        <input type="search" name="q" value="{{ query }}" placeholder="Filter boards" />
+        <select name="state" onchange="this.form.submit()">
+          <option value="all" {% if state == 'all' %}selected{% endif %}>All states</option>
+          {% for item in states %}
+            <option value="{{ item }}" {% if state == item %}selected{% endif %}>{{ item|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      <a class="btn" href="{{ url_for('main.project_new') }}">New project</a>
+    </header>
+    <main class="dash">
+      <section class="stats">
+        <article><strong>{{ projects|length }}</strong><span>Projects</span></article>
+        <article><strong>{{ open_tasks }}</strong><span>Open tasks</span></article>
+        <article><strong>{{ due_soon }}</strong><span>Due in 48h</span></article>
+        <article><strong>{{ shipped }}</strong><span>Shipped</span></article>
+      </section>
+      <div class="split">
+        <section>
+          <div class="dash-head">
+            <h1>Your boards</h1>
+          </div>
+          {% if not projects %}
+            <p class="empty">No projects yet. Start one and drop tasks onto the board.</p>
+          {% else %}
+            <ul class="project-grid">
+              {% for project in projects %}
+                <li>
+                  <a class="project-card" href="{{ url_for('main.project_board', project_id=project.id) }}">
+                    <span class="swatch" style="background:{{ project.color }}"></span>
+                    <h2>{{ project.name }}</h2>
+                    <p>{{ project.description or 'No brief yet' }}</p>
+                    <footer>
+                      <span class="pill">{{ project.state }}</span>
+                      <span>{{ project.progress() }}% shipped</span>
+                      {% if project.overdue_count() %}
+                        <span class="warn">{{ project.overdue_count() }} overdue</span>
+                      {% endif %}
+                    </footer>
+                    <div class="bar"><i style="width:{{ project.progress() }}%; background:{{ project.color }}"></i></div>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </section>
+        <aside class="rail">
+          <h2>Coming up</h2>
+          {% if upcoming %}
+            <ul class="plain">
+              {% for task in upcoming %}
+                <li>
+                  <a href="{{ url_for('main.task_detail', task_id=task.id) }}">{{ task.title }}</a>
+                  <small>{{ task.due_date.strftime('%b %d') }} · {{ task.project.name }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty">Nothing dated yet.</p>
+          {% endif %}
+          <h2>Activity</h2>
+          {% if recent %}
+            <ul class="plain">
+              {% for item in recent %}
+                <li>
+                  <strong>{{ item.actor.name }}</strong>
+                  <span>{{ item.message }}</span>
+                  <small>{{ item.created_at.strftime('%b %d, %H:%M') }}</small>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty">Quiet so far.</p>
+          {% endif %}
+        </aside>
+      </div>
+    </main>
+  </div>
+{% endblock %}

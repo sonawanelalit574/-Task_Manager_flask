@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title if task else 'New task' }} · Waypoint{% endblock %}
+{% block body_class %}app-shell{% endblock %}
+{% block content %}
+  {% include "_sidebar.html" %}
+  <div class="workspace">
+    <header class="app-bar">
+      <a href="{{ url_for('main.project_board', project_id=project.id) }}">← {{ project.name }}</a>
+    </header>
+    <main class="narrow">
+      <h1>{{ 'Edit task' if task else 'New task' }}</h1>
+      <form method="post" class="panel">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <label>Title
+          <input type="text" name="title" required maxlength="180" value="{{ task.title if task else '' }}" />
+        </label>
+        <label>Details
+          <textarea name="details" rows="5">{{ task.details if task else '' }}</textarea>
+        </label>
+        <div class="row">
+          <label>Column
+            <select name="status">
+              {% for status in statuses %}
+                <option value="{{ status }}" {% if task and task.status == status %}selected{% endif %}>{{ status_labels[status] }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Priority
+            <select name="priority">
+              {% for item in priorities %}
+                <option value="{{ item }}" {% if task and task.priority == item %}selected{% endif %}>{{ item|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Due
+            <input type="date" name="due_date" value="{{ task.due_date.isoformat() if task and task.due_date else '' }}" />
+          </label>
+        </div>
+        <label>Assignee
+          <select name="assignee_id">
+            <option value="">Unassigned</option>
+            {% for person in people %}
+              <option value="{{ person.id }}" {% if task and task.assignee_id == person.id %}selected{% endif %}>{{ person.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <fieldset class="label-picker">
+          <legend>Labels</legend>
+          {% for label in project.labels %}
+            <label class="check">
+              <input type="checkbox" name="label_ids" value="{{ label.id }}" {% if task and label in task.labels %}checked{% endif %} />
+              <em class="chip" style="--chip:{{ label.color }}">{{ label.name }}</em>
+            </label>
+          {% endfor %}
+        </fieldset>
+        <button class="btn large" type="submit">Save task</button>
+      </form>
+      {% if task %}
+        <section class="panel">
+          <h2>Checklist</h2>
+          <ul class="checklist">
+            {% for item in checklist %}
+              <li>
+                <form method="post" action="{{ url_for('main.toggle_checklist_item', item_id=item.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button class="check-btn {{ 'on' if item.done else '' }}" type="submit">{{ '✓' if item.done else '' }}</button>
+                </form>
+                <span class="{{ 'done' if item.done else '' }}">{{ item.title }}</span>
+                <form method="post" action="{{ url_for('main.delete_checklist_item', item_id=item.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button class="linkish" type="submit">Remove</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+          <form method="post" action="{{ url_for('main.add_checklist_item', task_id=task.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="text" name="title" required maxlength="180" placeholder="Add a sub-task" />
+            <button class="btn" type="submit">Add</button>
+          </form>
+        </section>
+        <form method="post" action="{{ url_for('main.task_delete', task_id=task.id) }}" onsubmit="return confirm('Delete this task?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="danger" type="submit">Delete task</button>
+        </form>
+        <section class="comments">
+          <h2>Notes</h2>
+          <form method="post" action="{{ url_for('main.add_comment', task_id=task.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <textarea name="body" rows="3" required placeholder="Leave a note for the crew"></textarea>
+            <button class="btn" type="submit">Post</button>
+          </form>
+          <ul>
+            {% for comment in comments %}
+              <li>
+                <strong>{{ comment.author.name }}</strong>
+                <time>{{ comment.created_at.strftime('%b %d, %H:%M') }}</time>
+                <p>{{ comment.body }}</p>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    </main>
+  </div>
+{% endblock %}

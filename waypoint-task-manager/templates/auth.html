@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Create account' if mode == 'register' else 'Sign in' }} · Waypoint{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+  <main class="auth-wrap">
+    <a class="mark" href="{{ url_for('main.landing') }}">Waypoint</a>
+    <h1>{{ 'Create your workspace' if mode == 'register' else 'Welcome back' }}</h1>
+    <p class="lede">{{ 'Boards, inbox, and agenda in a few seconds.' if mode == 'register' else 'Pick up where the crew left off.' }}</p>
+    <form method="post" class="panel">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% if mode == 'register' %}
+        <label>Name
+          <input type="text" name="name" required maxlength="80" autocomplete="name" />
+        </label>
+      {% endif %}
+      <label>Email
+        <input type="email" name="email" required autocomplete="email" />
+      </label>
+      <label>Password
+        <input type="password" name="password" required minlength="8" autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}" />
+      </label>
+      <button class="btn large" type="submit">{{ 'Create account' if mode == 'register' else 'Sign in' }}</button>
+    </form>
+    {% if mode == 'register' %}
+      <p class="switch">Already here? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    {% else %}
+      <p class="switch">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+    {% endif %}
+  </main>
+{% endblock %}
